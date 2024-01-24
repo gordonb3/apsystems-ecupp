@@ -1,0 +1,17 @@
+.lib
+CMakeFiles
+CMakeCache.txt
+**/Makefile
+*.cmake
+*.a
+*.o
+*.log
+*.orig
+*.rej
+tests
+ecu*
+*.json
+!*.cpp
+!*.hpp
+!*.h
+wiki

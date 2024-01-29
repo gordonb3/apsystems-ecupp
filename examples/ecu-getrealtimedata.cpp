@@ -50,6 +50,16 @@ int main(int argc, char *argv[])
 		return statuscode;
 	}
 
+	statuscode = ecuclient->GetInverterSignalLevels();
+	if (statuscode != 0)
+	{
+		if (statuscode == -1)
+			std::cout << "QueryInverters failed connect with error " << errno << "\n";
+		else if (statuscode == 1)
+			std::cout << "Received invalid data from QueryInverters\n";
+		return statuscode;
+	}
+
 	struct tm * tt;
 	tt = localtime(&ecuclient->m_apsecu.timestamp);
 	char timestring[20];
@@ -59,8 +69,12 @@ int main(int argc, char *argv[])
 	for (size_t i = 0; i < ecuclient->m_apsecu.inverters.size(); i++)
 	{
 	
-		std::cout << "{\n	\"inverter ID\" : \"" << ecuclient->m_apsecu.inverters[i].id << "\",\n	\"online\" : " << (int)ecuclient->m_apsecu.inverters[i].online_status << ",\n	\"frequency\" : "
-		          << ecuclient->m_apsecu.inverters[i].frequency << ",\n	\"temperature\" : " << ecuclient->m_apsecu.inverters[i].temperature << ",\n	\"channels\" : [";
+		std::cout << "{\n	\"inverter ID\" : \"" << ecuclient->m_apsecu.inverters[i].id
+		          << "\",\n	\"online\" : " << (int)ecuclient->m_apsecu.inverters[i].online_status
+		          << ",\n	\"frequency\" : " << ecuclient->m_apsecu.inverters[i].frequency
+		          << ",\n	\"temperature\" : " << ecuclient->m_apsecu.inverters[i].temperature
+		          << ",\n	\"signal strength\" : " << ecuclient->m_apsecu.inverters[i].signal_strength
+		          << ",\n	\"channels\" : [";
 		  
 		size_t numchannels = ecuclient->m_apsecu.inverters[i].channels.size();
 		for (size_t j = 0; j < numchannels; j++)

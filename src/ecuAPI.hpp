@@ -34,6 +34,7 @@ namespace APSystems {
       uint8_t online_status;
       double frequency;
       int temperature;
+      int signal_strength;
       std::vector<APSystems::ecu::InverterChannel> channels;
     
     } InverterInfo;
@@ -69,6 +70,7 @@ public:
 
 	int QueryECU();
 	int QueryInverters();
+	int GetInverterSignalLevels();
 
 private:
 	int m_sockfd;

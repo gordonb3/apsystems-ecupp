@@ -31,7 +31,6 @@
 #include <arpa/inet.h>
 #endif
 
-
 #ifdef DEBUG
 #include <iostream>
 
@@ -155,7 +154,8 @@ int ecuAPI::QueryInverters()
 	m_apsecu.timestamp = ReadTimestamp(buffer, 19);
 
 	int inverter_pos = 26;
-	for (int i = 0; i < m_apsecu.numinverters; i++)
+	int maxpos = numbytes - 4;
+	for (int i = 0; ( (i < m_apsecu.numinverters) && (inverter_pos < maxpos) ); i++)
 	{
 		unsigned char* currentinverter = &buffer[inverter_pos];
 		m_apsecu.inverters[i].id = ReadBCDnumber(currentinverter, 0, 6);
@@ -246,6 +246,56 @@ int ecuAPI::QueryInverters()
 			else
 				inverter_pos += 9;
 		}
+	}
+	return 0;
+}
+
+int ecuAPI::GetInverterSignalLevels()
+{
+	if (m_apsecu.id.empty() || (m_apsecu.numinverters == 0))
+	{
+		int statuscode = QueryInverters();
+		if (statuscode != 0)
+			return statuscode;
+	}
+	unsigned char buffer[READ_BUFFER_SIZE];
+	bcopy(INVERTER_SIGNAL_HEADER, (char*)&buffer[0], sizeof(INVERTER_SIGNAL_HEADER));
+	int buffer_pos = (int)sizeof(INVERTER_SIGNAL_HEADER);
+	bcopy(m_apsecu.id.c_str(), (char*)&buffer[buffer_pos], m_apsecu.id.length());
+	buffer_pos += m_apsecu.id.length();
+	bcopy(MESSAGE_SEND_TRAILER, (char*)&buffer[buffer_pos], sizeof(MESSAGE_SEND_TRAILER));
+	buffer_pos += (int)sizeof(MESSAGE_SEND_TRAILER);
+
+	if (!ConnectToDevice())
+		return -1;
+	send(buffer, buffer_pos);
+	int numbytes = receive(buffer, READ_BUFFER_SIZE);
+	disconnect();
+
+#ifdef DEBUG
+	std::cout << "dbg: received message: ";
+	for(int i=0; i<(int)(numbytes); ++i)
+		printf("%.2x", (uint8_t)buffer[i]);
+	std::cout << "\n";
+#endif
+	if ( (numbytes < 15) || (!VerifyMessageSize(numbytes, buffer)) )
+		return 1;
+
+	int inverter_pos = 15;
+	int maxpos = numbytes - 4;
+	while (inverter_pos < maxpos)
+	{
+		unsigned char* currentinverter = &buffer[inverter_pos];
+		std::string inverter_id = ReadBCDnumber(currentinverter, 0, 6);
+		for (int j = 0; j < m_apsecu.numinverters; j++)
+		{
+			if (m_apsecu.inverters[j].id == inverter_id)
+			{
+				m_apsecu.inverters[j].signal_strength = (int)(currentinverter[6] * 100 / 255);
+				break;
+			}
+		}
+		inverter_pos += 7;
 	}
 	return 0;
 }

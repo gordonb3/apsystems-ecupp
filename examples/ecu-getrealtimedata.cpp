@@ -31,13 +31,14 @@ int main(int argc, char *argv[])
 		return statuscode;
 	}
 
-	std::cout << "ECU id: " << ecuclient->m_apsecu.id << "\n";
-	std::cout << "ECU version: " << ecuclient->m_apsecu.version << "\n";
+	std::cout << "{\n    \"ECU_ID\" : " << ecuclient->m_apsecu.id << "\n";
+	std::cout << "    \"ECU_version\" : \"" << ecuclient->m_apsecu.version << "\"\n";
 
-	std::cout << "life time energy: " << ecuclient->m_apsecu.lifetime_energy << " kWh\n";
-	std::cout << "current power: " << ecuclient->m_apsecu.current_power << " Watt\n";
-	std::cout << "today energy: " << ecuclient->m_apsecu.today_energy << " kWh\n";
-	std::cout << "number of inverters online: " << ecuclient->m_apsecu.invertersonline << "/" << ecuclient->m_apsecu.numinverters << "\n";
+	std::cout << "    \"lifetime_energy\" : " << ecuclient->m_apsecu.lifetime_energy << "\n";
+	std::cout << "    \"current_power\" : " << ecuclient->m_apsecu.current_power << "\n";
+	std::cout << "    \"today_energy\" : " << ecuclient->m_apsecu.today_energy << "\n";
+	std::cout << "    \"inverters_online\" : " << ecuclient->m_apsecu.invertersonline << "\n";
+	std::cout << "    \"inverters_registered\" : " << ecuclient->m_apsecu.numinverters << "\n";
 
 
 	statuscode = ecuclient->QueryInverters();
@@ -64,36 +65,38 @@ int main(int argc, char *argv[])
 	tt = localtime(&ecuclient->m_apsecu.timestamp);
 	char timestring[20];
 	strftime(timestring, 20, "%Y-%m-%d %H:%M:%S" , tt);
-	std::cout << "timestamp: " << timestring << "\n";
+	std::cout << "    \"timestamp\" : \"" << timestring << "\"\n";
 
+	std::cout << "    \"inverters\" : \n    [\n";
 	for (size_t i = 0; i < ecuclient->m_apsecu.inverters.size(); i++)
 	{
-	
-		std::cout << "{\n	\"inverter ID\" : \"" << ecuclient->m_apsecu.inverters[i].id
-		          << "\",\n	\"online\" : " << (int)ecuclient->m_apsecu.inverters[i].online_status
-		          << ",\n	\"frequency\" : " << ecuclient->m_apsecu.inverters[i].frequency
-		          << ",\n	\"temperature\" : " << ecuclient->m_apsecu.inverters[i].temperature
-		          << ",\n	\"signal strength\" : " << ecuclient->m_apsecu.inverters[i].signal_strength
-		          << ",\n	\"channels\" : [";
-		  
 		size_t numchannels = ecuclient->m_apsecu.inverters[i].channels.size();
-		for (size_t j = 0; j < numchannels; j++)
-		{
-			if (j > 0)
-				std::cout << ",";
-			std::cout << "\n			{\n				\"power\" : " << ecuclient->m_apsecu.inverters[i].channels[j].power
-			          << ",\n				\"volt\" : " << ecuclient->m_apsecu.inverters[i].channels[j].volt << "\n			}";
-	  
-	  	}
-	  
-		if (numchannels > 0)
-			std::cout << "\n			]\n}\n";
+	
+		if (i > 0)
+			std::cout << ",";
+		std::cout << "\n        {\n            \"inverter_ID\" : " << ecuclient->m_apsecu.inverters[i].id
+		          << ",\n            \"online\" : " << (int)ecuclient->m_apsecu.inverters[i].online_status
+		          << ",\n            \"frequency\" : " << ecuclient->m_apsecu.inverters[i].frequency
+		          << ",\n            \"temperature\" : " << ecuclient->m_apsecu.inverters[i].temperature
+		          << ",\n            \"signal_strength\" : " << ecuclient->m_apsecu.inverters[i].signal_strength;
+		if (numchannels == 0)
+			std::cout << ",\n            \"channels\" : []\n        }";
 		else
-			std::cout << "]\n}\n";
+		{
+			std::cout << ",\n            \"channels\" :\n            [";
+		  
+			for (size_t j = 0; j < numchannels; j++)
+			{
+				if (j > 0)
+					std::cout << ",";
+				std::cout << "\n                {\n                    \"power\" : " << ecuclient->m_apsecu.inverters[i].channels[j].power
+				          << ",\n                    \"volt\" : " << ecuclient->m_apsecu.inverters[i].channels[j].volt << "\n                }";
+		  	}
+	  
+			std::cout << "\n            ]\n        }";
+		}
 
 	}
-
-
-
+	std::cout << "\n    ]\n}\n";
 	return 0;
 }

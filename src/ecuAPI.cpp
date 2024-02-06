@@ -13,6 +13,12 @@
 #define ECU_LISTEN_PORT 8899
 #define READ_BUFFER_SIZE 2000
 
+#define ECU_QUERY_HEADER 	"APS1100160001"
+#define INVERTER_QUERY_HEADER	"APS1100280002"
+#define INVERTER_SIGNAL_HEADER	"APS1100280003"
+#define GET_ENERGY_DAY		"APS1100360003"
+#define GET_ENERGY_WMY		"APS1100300004"
+
 #include "ecuAPI.hpp"
 #include <netdb.h>
 #include <zlib.h>
@@ -60,12 +66,12 @@ void ecuAPI::SetTargetAddress(const std::string ip_address)
 
 int ecuAPI::GetDayReport(const int year, const uint8_t month, const uint8_t day, std::string &jsondata)
 {
-	unsigned char buffer[READ_BUFFER_SIZE] = "APS1100360003";
+	unsigned char buffer[READ_BUFFER_SIZE] = GET_ENERGY_DAY;
 	int buffer_pos = 13;
 	bcopy(m_apsecu.id.c_str(), (char*)&buffer[buffer_pos], m_apsecu.id.length());
 	buffer_pos += m_apsecu.id.length();
-	bcopy(MESSAGE_SEND_TRAILER, (char*)&buffer[buffer_pos], sizeof(MESSAGE_SEND_TRAILER));
-	buffer_pos += (int)sizeof(MESSAGE_SEND_TRAILER) - 1;
+	bcopy(MESSAGE_SEND_TRAILER, (char*)&buffer[buffer_pos], 3);
+	buffer_pos += 3;
 
 	char datestring[20];
 	sprintf(datestring, "%04d%02d%02d\n", year, month, day);
@@ -120,12 +126,12 @@ int ecuAPI::GetPeriodReport(const uint8_t period, std::string &jsondata)
 	if (period > 2)
 		return -1;
 
-	unsigned char buffer[READ_BUFFER_SIZE] = "APS1100300004";
+	unsigned char buffer[READ_BUFFER_SIZE] = GET_ENERGY_WMY;
 	int buffer_pos = 13;
 	bcopy(m_apsecu.id.c_str(), (char*)&buffer[buffer_pos], m_apsecu.id.length());
 	buffer_pos += m_apsecu.id.length();
-	bcopy(MESSAGE_SEND_TRAILER, (char*)&buffer[buffer_pos], sizeof(MESSAGE_SEND_TRAILER));
-	buffer_pos += (int)sizeof(MESSAGE_SEND_TRAILER) - 1;
+	bcopy(MESSAGE_SEND_TRAILER, (char*)&buffer[buffer_pos], 3);
+	buffer_pos += 3;
 	uint8_t datestring[3] = { 0x30, (uint8_t)(period | 0x30), 0x0a };
 	bcopy(datestring, (char*)&buffer[buffer_pos], 3);
 	buffer_pos += 3;
@@ -170,9 +176,8 @@ int ecuAPI::GetPeriodReport(const uint8_t period, std::string &jsondata)
 
 int ecuAPI::QueryECU()
 {
-	unsigned char buffer[READ_BUFFER_SIZE];
-	bcopy(ECU_QUERY_HEADER, (char*)&buffer[0], sizeof(ECU_QUERY_HEADER));
-	int buffer_pos = (int)sizeof(ECU_QUERY_HEADER);
+	unsigned char buffer[READ_BUFFER_SIZE] = ECU_QUERY_HEADER;
+	int buffer_pos = 13;
 	bcopy(MESSAGE_SEND_TRAILER, (char*)&buffer[buffer_pos], sizeof(MESSAGE_SEND_TRAILER));
 	buffer_pos += (int)sizeof(MESSAGE_SEND_TRAILER);
 
@@ -243,9 +248,8 @@ int ecuAPI::QueryInverters()
 		if (statuscode != 0)
 			return statuscode;
 	}
-	unsigned char buffer[READ_BUFFER_SIZE];
-	bcopy(INVERTER_QUERY_HEADER, (char*)&buffer[0], sizeof(INVERTER_QUERY_HEADER));
-	int buffer_pos = (int)sizeof(INVERTER_QUERY_HEADER);
+	unsigned char buffer[READ_BUFFER_SIZE] = INVERTER_QUERY_HEADER;
+	int buffer_pos = 13;
 	bcopy(m_apsecu.id.c_str(), (char*)&buffer[buffer_pos], m_apsecu.id.length());
 	buffer_pos += m_apsecu.id.length();
 	bcopy(MESSAGE_SEND_TRAILER, (char*)&buffer[buffer_pos], sizeof(MESSAGE_SEND_TRAILER));
@@ -374,9 +378,8 @@ int ecuAPI::GetInverterSignalLevels()
 		if (statuscode != 0)
 			return statuscode;
 	}
-	unsigned char buffer[READ_BUFFER_SIZE];
-	bcopy(INVERTER_SIGNAL_HEADER, (char*)&buffer[0], sizeof(INVERTER_SIGNAL_HEADER));
-	int buffer_pos = (int)sizeof(INVERTER_SIGNAL_HEADER);
+	unsigned char buffer[READ_BUFFER_SIZE] = INVERTER_SIGNAL_HEADER;
+	int buffer_pos = 13;
 	bcopy(m_apsecu.id.c_str(), (char*)&buffer[buffer_pos], m_apsecu.id.length());
 	buffer_pos += m_apsecu.id.length();
 	bcopy(MESSAGE_SEND_TRAILER, (char*)&buffer[buffer_pos], sizeof(MESSAGE_SEND_TRAILER));
